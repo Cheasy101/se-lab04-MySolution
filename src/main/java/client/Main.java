@@ -57,29 +57,49 @@ public class Main {
                     break;
                 case (2):
                     // TODO: 19.03.2023  make an action
+//                    System.out.println("Enter name of the file: > ");
+//                    String nameOfCurrentClientFile = scanner.next();
+//                    System.out.println("Enter name of the file to be saved on server: > ");
+//                    String nameOfNewFIle = scanner.next();
+//
+//                    dataOutputStream.writeUTF(nameOfNewFIle);
+//                    System.out.println("Отправили имя ");
+//
+//
+//                    // TODO: 20.03.2023 обработать исключения. я неправильно сделал
+//
+////                    if (dataInputStream.readUTF().equals("Status Code 403")) {
+////                        System.out.println("Ошибка, такое имя уже есть в базе");
+////                    } else {
+//                        sendFile(nameOfCurrentClientFile, pathToClientData);
+//
+//                        System.out.println("The request was sent.");
+//
+//                        int getId = dataInputStream.readInt();
+//                        System.out.println("Response says that file is saved! ID > " + getId);
+//
+//                        break;
+//                    }
                     System.out.println("Enter name of the file: > ");
                     String nameOfCurrentClientFile = scanner.next();
                     System.out.println("Enter name of the file to be saved on server: > ");
                     String nameOfNewFIle = scanner.next();
 
+                    if (nameOfNewFIle.equals("")) {
+                        nameOfNewFIle = nameOfCurrentClientFile;
+                    }
+
                     dataOutputStream.writeUTF(nameOfNewFIle);
                     System.out.println("Отправили имя ");
 
-
                     // TODO: 20.03.2023 обработать исключения. я неправильно сделал
 
-                    if (dataInputStream.readUTF().equals("Status Code 403")) {
-                        System.out.println("Ошибка, такое имя уже есть в базе");
-                    } else {
-                        sendFile(nameOfCurrentClientFile, pathToClientData);
-
-                        System.out.println("The request was sent.");
-
-                        int getId = dataInputStream.readInt();
-                        System.out.println("Response says that file is saved! ID > " + getId);
-
-                        break;
-                    }
+//                    if (dataInputStream.readUTF().equals("Status Code 403")) {
+//                        System.out.println("Ошибка, такое имя уже есть в базе");
+//                    } else {
+                    sendFile(nameOfCurrentClientFile);
+                    System.out.println("The request was sent.");
+                    break;
                 case (3): {
                     // TODO: 19.03.2023  make an action
                     System.out.println("Do you want to delete the file by name or by id (1 - name, 2 - id): > ");
@@ -102,6 +122,7 @@ public class Main {
                             System.out.println(dataInputStream.readUTF());
                         }
                     }
+                    break;
                 }
             }
 
@@ -184,34 +205,52 @@ public class Main {
         }
     }
 
-    public static void sendFile(String fileName, String pathToClientData) throws IOException {
+//    public static void sendFile(String fileName, String pathToClientData) throws IOException {
+//
+//        int bytes = 0;
+//
+//        File file = new File(pathToClientData, fileName);
+//        FileInputStream fileInputStream = new FileInputStream(file);
+//
+//
+//        dataOutputStream.writeLong(file.length());
+//        // тут массив может быть очень большой, необходимо будет это учитывать потом
+//        byte[] buffer = new byte[(int) file.length()];
+//        // в переменнную буфер считываем все байты из файла
+//        fileInputStream.read(buffer);
+//        for (int i = 0; i < buffer.length; i++) {
+//            System.out.println(buffer[i]);
+//        }
+//        // отправили через сокет
+//        dataOutputStream.write(buffer);
+//
+////        dataOutputStream.writeLong(file.length()); // отправляем байтовую длинну файла
+////
+////        byte[] buffer = new byte[(int) file.length()];
+////
+////        while ((bytes = fileInput.read(buffer)) != -1) {
+////            dataOutputStream.write(buffer, 0, bytes);
+////            dataOutputStream.flush();
+////        }
+//    }
+
+    public static void sendFile(String fileName) throws IOException {
 
         int bytes = 0;
 
         File file = new File(pathToClientData, fileName);
-        FileInputStream fileInputStream = new FileInputStream(file);
+        FileInputStream fileInput = new FileInputStream(file);
 
+        dataOutputStream.writeLong(file.length()); // отправляем байтовую длинну файла
 
-        dataOutputStream.writeLong(file.length());
-        // тут массив может быть очень большой, необходимо будет это учитывать потом
-        byte[] buffer = new byte[(int) file.length()];
-        // в переменнную буфер считываем все байты из файла
-        fileInputStream.read(buffer);
-        for (int i = 0; i < buffer.length; i++) {
-            System.out.println(buffer[i]);
+        byte[] buffer = new byte[4 * 1024];
+        while ((bytes = fileInput.read(buffer)) != -1) {
+            dataOutputStream.write(buffer, 0, bytes);
+            dataOutputStream.flush();
         }
-        // отправили через сокет
-        dataOutputStream.write(buffer);
-
-//        dataOutputStream.writeLong(file.length()); // отправляем байтовую длинну файла
-//
-//        byte[] buffer = new byte[(int) file.length()];
-//
-//        while ((bytes = fileInput.read(buffer)) != -1) {
-//            dataOutputStream.write(buffer, 0, bytes);
-//            dataOutputStream.flush();
-//        }
+        dataInputStream.close();
     }
+
 }
 
 

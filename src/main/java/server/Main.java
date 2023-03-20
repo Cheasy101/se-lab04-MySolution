@@ -48,7 +48,7 @@ class Session extends Thread {
             System.out.println("Получили action: " + actionVar);
 
             switch (actionVar) {
-                case (1):
+                case (1): {
                     // TODO: 19.03.2023  make an action
 
                     updateHasMup();
@@ -66,31 +66,52 @@ class Session extends Thread {
                         sendFileServerVersion(file.getPath());
                     }
                     break;
+                }
 
 
-                case (2):
+                case (2): {
                     // TODO: 19.03.2023  make an action
 
-                    String nameOfFile = dataInputStream.readUTF();
-                    System.out.println("имя файла " + nameOfFile);
-
+//                    String nameOfFile = dataInputStream.readUTF();
+//                    System.out.println("имя файла " + nameOfFile);
+//
+//                    updateHasMup(); //обновляем базу
+//
+//                    /**
+//                     * Типа если такое имя уже есть в базе, то ошибка
+//                     */
+//
+////                    if (Main.serverDataBase.containsKey(nameOfFile)) {
+////                        System.out.println("Status code 403");
+////                        dataOutputStream.writeUTF("Status Code 403");
+////                        break;
+////                    } else { почему-то вместе с проверками файл не переносит содержимое
+//
+//                        System.out.println("Получили имя " + nameOfFile);
+//                        acceptAndSaveFile(nameOfFile); //сохранили файл
                     updateHasMup(); //обновляем базу
+
+                    for (Map.Entry<String, String> entry : Main.serverDataBase.entrySet()) {
+                        System.out.println(entry.getKey() + " " + entry.getValue() + "\n");
+                    }
+
+                    String nameOfFile = dataInputStream.readUTF();
 
                     /**
                      * Типа если такое имя уже есть в базе, то ошибка
                      */
 
-                    if (Main.serverDataBase.containsKey(nameOfFile)) {
-                        System.out.println("Status code 403");
-                        dataOutputStream.writeUTF("Status Code 403");
-                        break;
-                    } else {
+//                    if (Main.serverDataBase.containsKey(nameOfFile)) {
+//                        System.out.println("Status code 403");
+//                        dataOutputStream.writeUTF("Status Code 403");
+//                        break;
+//                    } else { todo я неправильно обрабатываю исключения
 
-                        System.out.println("Получили имя " + nameOfFile);
-                        acceptAndSaveFile(nameOfFile); //сохранили файл
-
-                    }
+                    System.out.println("Получили имя " + nameOfFile);
+                    acceptAndSaveFile(nameOfFile);
+//                    }
                     break;
+                }
 
                 case (3): {
                     // TODO: 19.03.2023  make an action
@@ -108,6 +129,7 @@ class Session extends Thread {
                                 updateHasMup();
                                 System.out.println("ну вот хэшмап должен был обновиться");
                                 Main.serverDataBase = rewriteHashMup(nameOrId);
+                                rewriteDatabaseFile();
                                 dataOutputStream.writeUTF("The response says that this file with id > " + nameOrId + " deleted successfully!");
                             } else System.out.println("The response says that this file is not found!");
                         }
@@ -117,11 +139,12 @@ class Session extends Thread {
                         if (file.delete()) { // если успешно удалили, то перезаписываем базу
                             updateHasMup();
                             Main.serverDataBase = rewriteHashMup(nameOrId);
+                            rewriteDatabaseFile();
                             dataOutputStream.writeUTF("The response says that this file with id > " + nameOrId + " deleted successfully!");
                         } else System.out.println("The response says that this file is not found!");
-                    }
+                    }break;
                 }
-                break;
+
             }
 
 //            output.writeUTF(nameOfUser);
@@ -144,9 +167,53 @@ class Session extends Thread {
 
 
     public static void acceptAndSaveFile(String fileName) throws IOException {
-        Random random = new Random();
-        int bytes = 0;
+//        Random random = new Random();
+//        int bytes = 0;
+//
+//        File file = new File(Main.pathToServerData, fileName); //сложили место и имя файла
+//        System.out.println("сложили место и имя файла");
+//        FileOutputStream fileOutputStream = new FileOutputStream(file);
+//
+//
+//        int uniqId = random.nextInt(0, 100);
+//        boolean flag = true;
+//
+//        while (flag) {
+//            if (Main.serverDataBase.containsValue(uniqId)) {
+//                uniqId = random.nextInt(0, 100);
+//            } else flag = false;
+//        }
+//
+//        Main.serverDataBase.put(fileName, String.valueOf(uniqId)); // добавили значение в хешмап
+//        System.out.println("добавили значение в хешмап");
+//        addFileToTextServerDatabase(); // добавили эти значения в файл
+//
+//
+//        /**
+//         * т.е грубо говоря пока я не создам уникальный айди - я продолжаю его генерить.
+//         */
+//
+//        System.out.println("Дошли до переноса файла");
+//
+//        long size = dataInputStream.readLong();
+//        byte[] buffer =  new byte[(int) file.length()];
+//
+//        System.out.println("надеюсь дошел дальше");
+//
+//        while (size > 0
+//                && (bytes = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+//            fileOutputStream.write(buffer, 0, bytes);
+//            size -= bytes;
+//        }
+//
+//        System.out.println("File is Received");
+//
+//        dataOutputStream.writeInt(uniqId); // отправляем айдишник пользователю
+//        System.out.println("status code 200");
+////        fileOutputStream.close();
 
+        int bytes = 0;
+        Random random = new Random();
         File file = new File(Main.pathToServerData, fileName); //сложили место и имя файла
         System.out.println("сложили место и имя файла");
         FileOutputStream fileOutputStream = new FileOutputStream(file);
@@ -183,9 +250,6 @@ class Session extends Thread {
 
         System.out.println("File is Received");
 
-        dataOutputStream.writeInt(uniqId); // отправляем айдишник пользователю
-        System.out.println("status code 200");
-//        fileOutputStream.close();
     }
 
     static File file = new File(Main.pathToServerTextDatabase);
@@ -279,7 +343,21 @@ class Session extends Thread {
         }
         return null;
     }
+    public static void rewriteDatabaseFile() throws FileNotFoundException {
+        PrintWriter writer = new PrintWriter(Main.pathToServerTextDatabase);
+        writer.print("");
+        writer.close();
 
+        try (FileWriter pathToServerTextDatabase = new FileWriter(Main.pathToServerTextDatabase);) {
+
+            for (Map.Entry<String, String> entry : Main.serverDataBase.entrySet()) {
+                pathToServerTextDatabase.write(entry.getKey() + " " + entry.getValue() + "\n"); //записали имя файла в текст
+            }
+            updateHasMup();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static HashMap<String, String> rewriteHashMup(String nameOrId) {
         HashMap<String, String> map = new HashMap<>();
         List<String> keys = new ArrayList<String>(Main.serverDataBase.keySet());

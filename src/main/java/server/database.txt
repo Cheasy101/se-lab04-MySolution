@@ -1,4 +1,1 @@
-as.fd 24
-gag.yey 67
-mom.txt 57
-dad.txt' 59
+mom.txt 5
