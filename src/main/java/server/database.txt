@@ -1,1 +1,5 @@
-mom.txt 5
+mock.pdf 31
+dad.txt 46
+gunna.txt 54
+mom.txt 61
+so.txt 12

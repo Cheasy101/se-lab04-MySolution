@@ -2,6 +2,9 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Main {
@@ -30,7 +33,7 @@ public class Main {
                     Scanner sc = new Scanner(System.in);
                     System.out.println("Do you want to get the file by name or by id (1 - name, 2 - id):");
 
-                    String recieveAction = sc.nextLine();
+                    String recieveAction = sc.next();
                     if (recieveAction.equals("1")) {
 
                         System.out.println("Enter name of file");
@@ -39,7 +42,7 @@ public class Main {
                         dataOutputStream.writeUTF(a);
 
                         writeBytesInNewFile(a, getArrayOfBytes()); //почему-то если все оставлять в 1 методе, то выполняется очень долго
-                        System.out.println(dataInputStream.readUTF());
+                        System.out.println("The file was downloaded! Specify a name for it: " + a);
                         // получаем по имени
 
                     } else if (recieveAction.equals("2")) {
@@ -51,37 +54,27 @@ public class Main {
                         dataOutputStream.writeUTF(a);
 
                         writeBytesInNewFile(dataInputStream.readUTF(), getArrayOfBytes());
-                        System.out.println(dataInputStream.readUTF());
+
+
+                        String gettedKey = dataInputStream.readUTF();
+                        System.out.println(" getted key " + gettedKey);
+                        System.out.println("The file was downloaded! Specify a name for it: " + gettedKey);
+
                     }
 
                     break;
                 case (2):
-                    // TODO: 19.03.2023  make an action
-//                    System.out.println("Enter name of the file: > ");
-//                    String nameOfCurrentClientFile = scanner.next();
-//                    System.out.println("Enter name of the file to be saved on server: > ");
-//                    String nameOfNewFIle = scanner.next();
-//
-//                    dataOutputStream.writeUTF(nameOfNewFIle);
-//                    System.out.println("Отправили имя ");
-//
-//
-//                    // TODO: 20.03.2023 обработать исключения. я неправильно сделал
-//
-////                    if (dataInputStream.readUTF().equals("Status Code 403")) {
-////                        System.out.println("Ошибка, такое имя уже есть в базе");
-////                    } else {
-//                        sendFile(nameOfCurrentClientFile, pathToClientData);
-//
-//                        System.out.println("The request was sent.");
-//
-//                        int getId = dataInputStream.readInt();
-//                        System.out.println("Response says that file is saved! ID > " + getId);
-//
-//                        break;
-//                    }
                     System.out.println("Enter name of the file: > ");
                     String nameOfCurrentClientFile = scanner.next();
+
+                    Path path = Paths.get(pathToClientData, nameOfCurrentClientFile);
+
+                    if (!Files.exists(path)) {
+                        System.out.println("Такого файла не существует в директории клиента. Ошибка !");
+                        dataOutputStream.writeUTF("exit");
+                        break;
+                    }
+
                     System.out.println("Enter name of the file to be saved on server: > ");
                     String nameOfNewFIle = scanner.next();
 
@@ -92,14 +85,24 @@ public class Main {
                     dataOutputStream.writeUTF(nameOfNewFIle);
                     System.out.println("Отправили имя ");
 
-                    // TODO: 20.03.2023 обработать исключения. я неправильно сделал
+                    String newString = dataInputStream.readUTF();
 
-//                    if (dataInputStream.readUTF().equals("Status Code 403")) {
-//                        System.out.println("Ошибка, такое имя уже есть в базе");
-//                    } else {
-                    sendFile(nameOfCurrentClientFile);
-                    System.out.println("The request was sent.");
+                    if (newString.equals("Status Code 403")) {
+                        System.out.println("Ошибка, такое имя уже есть в базе");
+                        break;
+                    } else {
+                        sendFile(nameOfCurrentClientFile);
+                        System.out.println("The request was sent.");
+
+                        //почемуто айди не отправляет
+
+//                        dataOutputStream.flush();
+//                        int id = dataInputStream.readInt();
+//                        System.out.println("Response says that file is saved! ID = " + id);
+//                        System.out.println( dataInputStream.readUTF() + " that means success");
+                    }
                     break;
+
                 case (3): {
                     // TODO: 19.03.2023  make an action
                     System.out.println("Do you want to delete the file by name or by id (1 - name, 2 - id): > ");
@@ -134,6 +137,45 @@ public class Main {
         }
     }
 
+
+    private static byte[] getArrayOfBytes() throws IOException {
+        int length = (int) dataInputStream.readLong();
+        byte[] resultBytes = new byte[length];
+        dataInputStream.readFully(resultBytes, 0, length);
+        return resultBytes; //получаю как бы файл из текущего потока
+    }
+
+    // по заданному имени создает файл в data и байты из массива записывает в новый файл
+    private static void writeBytesInNewFile(String nameOfFile, byte[] bytes) throws FileNotFoundException {
+
+        File file = new File(pathToClientData, nameOfFile);
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        try {
+            fileOutputStream.write(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void sendFile(String fileName) throws IOException {
+
+        int bytes = 0;
+
+        File file = new File(pathToClientData, fileName);
+        FileInputStream fileInput = new FileInputStream(file);
+
+        dataOutputStream.writeLong(file.length()); // отправляем байтовую длинну файла
+
+        byte[] buffer = new byte[4 * 1024];
+        while ((bytes = fileInput.read(buffer)) != -1) {
+            dataOutputStream.write(buffer, 0, bytes);
+            dataOutputStream.flush();
+        }
+//        dataInputStream.close();
+    }
+
+}
 //    private static void doFirstAction(int nextStep) throws IOException { //1 - name, 2 - id
 //        Scanner scanner = new Scanner(System.in);
 //        switch (nextStep) {
@@ -186,25 +228,6 @@ public class Main {
 //        System.out.println("File is Received");
 //    }
 
-    private static byte[] getArrayOfBytes() throws IOException {
-        int length = (int) dataInputStream.readLong();
-        byte[] resultBytes = new byte[length];
-        dataInputStream.readFully(resultBytes, 0, length);
-        return resultBytes; //получаю как бы файл из текущего потока
-    }
-
-    // по заданному имени создает файл в data и байты из массива записывает в новый файл
-    private static void writeBytesInNewFile(String nameOfFile, byte[] bytes) throws FileNotFoundException {
-
-        File file = new File(pathToClientData, nameOfFile);
-        FileOutputStream fileOutputStream = new FileOutputStream(file);
-        try {
-            fileOutputStream.write(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 //    public static void sendFile(String fileName, String pathToClientData) throws IOException {
 //
 //        int bytes = 0;
@@ -233,26 +256,6 @@ public class Main {
 ////            dataOutputStream.flush();
 ////        }
 //    }
-
-    public static void sendFile(String fileName) throws IOException {
-
-        int bytes = 0;
-
-        File file = new File(pathToClientData, fileName);
-        FileInputStream fileInput = new FileInputStream(file);
-
-        dataOutputStream.writeLong(file.length()); // отправляем байтовую длинну файла
-
-        byte[] buffer = new byte[4 * 1024];
-        while ((bytes = fileInput.read(buffer)) != -1) {
-            dataOutputStream.write(buffer, 0, bytes);
-            dataOutputStream.flush();
-        }
-        dataInputStream.close();
-    }
-
-}
-
 
 
 
