@@ -1,11 +1,13 @@
 package client;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+
 
 public class Main {
     private static final String SERVER_ADDRESS = "127.0.0.1";
@@ -23,10 +25,15 @@ public class Main {
             dataInputStream = new DataInputStream(socket.getInputStream());
 
             Scanner scanner = new Scanner(System.in);
+
+
+
             System.out.println("Enter action (1 - get a file, 2 - save a file, 3 - delete a file): > ");
             int action = scanner.nextInt();
 
             dataOutputStream.writeInt(action); //отправили значение серверу
+
+
 
             switch (action) {
                 case (1):
@@ -56,9 +63,9 @@ public class Main {
                         writeBytesInNewFile(dataInputStream.readUTF(), getArrayOfBytes());
 
 
-                        String gettedKey = dataInputStream.readUTF();
-                        System.out.println(" getted key " + gettedKey);
-                        System.out.println("The file was downloaded! Specify a name for it: " + gettedKey);
+//                        String gettedKey = dataInputStream.readUTF();
+//                        System.out.println(" getted key " + gettedKey);
+//                        System.out.println("The file was downloaded! Specify a name for it: " + gettedKey);
 
                     }
 
